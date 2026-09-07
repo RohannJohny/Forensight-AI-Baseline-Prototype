@@ -7,7 +7,7 @@ Forensight AI is an intelligent digital forensics investigation platform designe
 ## 🏛️ System Architecture
 
 - **Backend**: FastAPI (Python 3.10+), SQLite database, Pydantic v2 schemas, cryptographic verification engine, AI/heuristic anomaly detection & MITRE ATT&CK mapping.
-- **Frontend**: React 18, Vite, Lucide Icons, responsive dark-themed forensic analyst dashboard.
+- **Frontend**: React 18, Vite, Lucide Icons, responsive dark-themed forensic analyst dashboard..
 
 ---
 
