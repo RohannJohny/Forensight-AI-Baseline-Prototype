@@ -51,5 +51,10 @@ def get_case_ai_summary(case_id: str, db: Session = Depends(get_db)):
 
     findings = db.query(Finding).filter(Finding.case_id == case_id).all()
 
-    result = EvidenceGroundedAssistant.query(case, events, findings, "Summarize the complete incident timeline and attack sequence")
+    result = EvidenceGroundedAssistant.query(
+        case,
+        events,
+        findings,
+        "Summarize the complete incident timeline and attack sequence",
+    )
     return AIChatResponse(**result)

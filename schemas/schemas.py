@@ -113,10 +113,6 @@ class FindingBase(BaseModel):
     confidence_score: float = 0.85
     validation_status: str = "Pending"
     investigator_notes: Optional[str] = None
-    behavior_classification: Optional[str] = None
-    classification_confidence: Optional[float] = None
-    classification_reason: Optional[str] = None
-    classification: Optional[Dict[str, Any]] = None
 
 
 class FindingCreate(FindingBase):
@@ -190,6 +186,8 @@ class CitationItem(BaseModel):
     event_id: str
     timestamp: str
     source_entity: str
+    artifact_id: Optional[str] = None
+    evidence_id: Optional[str] = None
     summary: str
 
 

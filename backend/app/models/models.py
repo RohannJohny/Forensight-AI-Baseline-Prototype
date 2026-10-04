@@ -1,5 +1,7 @@
+import re
 import uuid
 from datetime import datetime
+from typing import Optional, Dict, Any
 from sqlalchemy import (
     Column, String, Text, Float, Integer, DateTime, ForeignKey, JSON, LargeBinary
 )
@@ -109,6 +111,95 @@ class Finding(Base):
     case = relationship("Case", back_populates="findings")
     event = relationship("Event", back_populates="findings")
     attack_nodes = relationship("AttackNode", back_populates="finding")
+
+    @property
+    def behavior_classification(self) -> Optional[str]:
+        if getattr(self, "_behavior_classification", None) is not None:
+            return self._behavior_classification
+        ev = self.event or getattr(self, "_mock_event", None)
+        if ev:
+            from app.ai.evidence_classifier import EvidenceClassificationEngine
+            details = getattr(ev, "details", {})
+            details = details if isinstance(details, dict) else {}
+            return EvidenceClassificationEngine.classify_event(
+                getattr(ev, "event_type", ""), details
+            ).get("primary_category")
+        if self.description:
+            match = re.search(r"Behavior Classification:\s*([A-Z_]+)", self.description)
+            if match:
+                return match.group(1).strip()
+        return None
+
+    @behavior_classification.setter
+    def behavior_classification(self, value: Optional[str]) -> None:
+        self._behavior_classification = value
+
+    @property
+    def classification_confidence(self) -> Optional[float]:
+        if getattr(self, "_classification_confidence", None) is not None:
+            return self._classification_confidence
+        ev = self.event or getattr(self, "_mock_event", None)
+        if ev:
+            from app.ai.evidence_classifier import EvidenceClassificationEngine
+            details = getattr(ev, "details", {})
+            details = details if isinstance(details, dict) else {}
+            return EvidenceClassificationEngine.classify_event(
+                getattr(ev, "event_type", ""), details
+            ).get("confidence")
+        if self.description:
+            match = re.search(r"Classification Confidence:\s*([0-9.]+)", self.description)
+            if match:
+                try:
+                    return float(match.group(1).strip())
+                except ValueError:
+                    pass
+        return None
+
+    @classification_confidence.setter
+    def classification_confidence(self, value: Optional[float]) -> None:
+        self._classification_confidence = value
+
+    @property
+    def classification_reason(self) -> Optional[str]:
+        if getattr(self, "_classification_reason", None) is not None:
+            return self._classification_reason
+        ev = self.event or getattr(self, "_mock_event", None)
+        if ev:
+            from app.ai.evidence_classifier import EvidenceClassificationEngine
+            details = getattr(ev, "details", {})
+            details = details if isinstance(details, dict) else {}
+            classification = EvidenceClassificationEngine.classify_event(
+                getattr(ev, "event_type", ""), details
+            )
+            reasons = classification.get("reasons", [])
+            return reasons[-1] if reasons else None
+        if self.description:
+            match = re.search(r"Classification Reason:\s*([^\n\r]+)", self.description)
+            if match:
+                return match.group(1).strip()
+        return None
+
+    @classification_reason.setter
+    def classification_reason(self, value: Optional[str]) -> None:
+        self._classification_reason = value
+
+    @property
+    def classification(self) -> Optional[Dict[str, Any]]:
+        if getattr(self, "_classification", None) is not None:
+            return self._classification
+        ev = self.event or getattr(self, "_mock_event", None)
+        if ev:
+            from app.ai.evidence_classifier import EvidenceClassificationEngine
+            details = getattr(ev, "details", {})
+            details = details if isinstance(details, dict) else {}
+            return EvidenceClassificationEngine.classify_event(
+                getattr(ev, "event_type", ""), details
+            )
+        return None
+
+    @classification.setter
+    def classification(self, value: Optional[Dict[str, Any]]) -> None:
+        self._classification = value
 
 
 class AttackNode(Base):
