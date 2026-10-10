@@ -4,14 +4,12 @@ import {
   CheckCircle,
   XCircle,
   Edit3,
-  AlertCircle,
-  FileCheck,
   Info,
   X
 } from "lucide-react";
 import { validateFinding } from "../services/api";
 
-export default function ValidationGateView({ findings, activeCase, onRefresh }) {
+export default function ValidationGateView({ findings, _activeCase, onRefresh }) {
   const [editingFinding, setEditingFinding] = useState(null);
   const [editNotes, setEditNotes] = useState("");
   const [editTitle, setEditTitle] = useState("");
@@ -55,51 +53,59 @@ export default function ValidationGateView({ findings, activeCase, onRefresh }) 
     }
   };
 
+  const acceptedCount = findings ? findings.filter(f => f.validation_status === "Accepted").length : 0;
+  const totalCount = findings ? findings.length : 0;
+
   return (
-    <div style={{ padding: "28px", maxWidth: "1400px", margin: "0 auto" }}>
+    <div style={{ padding: "24px 28px", maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "20px",
+        flexWrap: "wrap",
+        gap: "12px"
+      }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
             <ShieldCheck size={20} color="var(--emerald)" />
-            <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#f8fafc" }}>
-              Examiner Validation Gate (Human-in-the-Loop)
+            <h2 style={{ fontSize: "19px", fontWeight: "700", color: "var(--text-main)" }}>
+              Examiner Validation Gate
             </h2>
           </div>
           <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-            Mandatory forensic governance checkpoint: AI suggests correlations; the lead examiner verifies, accepts, rejects, or modifies findings prior to report compilation.
+            Forensic governance checkpoint: AI suggests correlations; the lead examiner verifies, accepts, or modifies findings.
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "10px" }}>
-          <span className="badge-tag badge-emerald">
-            {findings.filter(f => f.validation_status === "Accepted").length} of {findings.length} Accepted
-          </span>
-        </div>
+        <span className="badge-tag badge-emerald">
+          {acceptedCount} of {totalCount} Accepted
+        </span>
       </div>
 
       {/* Info Notice */}
       <div style={{
-        background: "rgba(6, 182, 212, 0.06)",
-        border: "1px solid rgba(6, 182, 212, 0.2)",
+        backgroundColor: "var(--primary-subtle)",
+        border: "1px solid var(--primary-border)",
         borderRadius: "var(--radius-sm)",
-        padding: "14px 18px",
-        marginBottom: "24px",
+        padding: "12px 16px",
+        marginBottom: "20px",
         display: "flex",
         alignItems: "center",
-        gap: "12px",
+        gap: "10px",
         fontSize: "13px",
         color: "var(--text-dim)"
       }}>
-        <Info size={18} color="var(--cyan)" flexShrink={0} />
+        <Info size={16} color="var(--primary)" style={{ flexShrink: 0 }} />
         <div>
-          <strong>Non-Autonomous Legal Boundary:</strong> Under ISO/IEC 27037 and court admissibility standards, only findings explicitly marked as <strong>"Accepted"</strong> will be codified into the finalized AES-256 encrypted forensic dossier.
+          <strong>Forensic Admissibility:</strong> Under ISO/IEC 27037 forensic standards, only findings explicitly marked as <strong>"Accepted"</strong> will be codified into the finalized encrypted report dossier.
         </div>
       </div>
 
-      {/* Findings Grid / Cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        {findings.map((f) => {
+      {/* Findings List */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {findings?.map((f) => {
           const isAccepted = f.validation_status === "Accepted";
           const isRejected = f.validation_status === "Rejected";
 
@@ -108,14 +114,21 @@ export default function ValidationGateView({ findings, activeCase, onRefresh }) 
               key={f.finding_id}
               className="forensic-card"
               style={{
-                padding: "20px 24px",
-                borderColor: isAccepted ? "rgba(16, 185, 129, 0.3)" : isRejected ? "rgba(244, 63, 94, 0.3)" : "var(--border)",
-                borderLeft: isAccepted ? "4px solid var(--emerald)" : isRejected ? "4px solid var(--rose)" : "4px solid var(--amber)"
+                padding: "18px 20px",
+                borderLeftWidth: "4px",
+                borderLeftColor: isAccepted ? "var(--emerald)" : isRejected ? "var(--rose)" : "var(--amber)"
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: "8px",
+                flexWrap: "wrap",
+                gap: "10px"
+              }}>
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                     <span className="badge-tag badge-cyan" style={{ fontSize: "10.5px" }}>
                       {f.finding_type}
                     </span>
@@ -126,62 +139,65 @@ export default function ValidationGateView({ findings, activeCase, onRefresh }) 
                       AI Confidence: {(f.confidence_score * 100).toFixed(0)}%
                     </span>
                   </div>
-                  <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#f8fafc" }}>
+                  <h3 style={{ fontSize: "15.5px", fontWeight: "700", color: "var(--text-main)" }}>
                     {f.finding_title}
                   </h3>
                 </div>
 
                 {/* Examiner Action Buttons */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <button
                     className="btn btn-emerald"
-                    style={{ padding: "6px 12px", fontSize: "12px" }}
+                    style={{ padding: "5px 11px", fontSize: "12px" }}
                     onClick={() => handleQuickStatus(f, "Accepted")}
                     disabled={isAccepted}
                   >
-                    <CheckCircle size={14} /> Accept
+                    <CheckCircle size={13} /> Accept
                   </button>
                   <button
                     className="btn btn-rose"
-                    style={{ padding: "6px 12px", fontSize: "12px" }}
+                    style={{ padding: "5px 11px", fontSize: "12px" }}
                     onClick={() => handleQuickStatus(f, "Rejected")}
                     disabled={isRejected}
                   >
-                    <XCircle size={14} /> Reject
+                    <XCircle size={13} /> Reject
                   </button>
                   <button
                     className="btn btn-secondary"
-                    style={{ padding: "6px 12px", fontSize: "12px" }}
+                    style={{ padding: "5px 11px", fontSize: "12px" }}
                     onClick={() => openEditModal(f)}
                   >
-                    <Edit3 size={14} /> Edit & Notes
+                    <Edit3 size={13} /> Edit
                   </button>
                 </div>
               </div>
 
               {/* Description */}
-              <p style={{ fontSize: "13px", color: "var(--text-dim)", lineHeight: "1.6", marginBottom: "12px" }}>
+              <p style={{ fontSize: "13px", color: "var(--text-dim)", lineHeight: "1.55", marginBottom: "10px" }}>
                 {f.description}
               </p>
 
               {/* Footer Citations and Examiner Notes */}
               <div style={{
-                background: "rgba(0, 0, 0, 0.2)",
-                padding: "10px 14px",
+                backgroundColor: "var(--bg-card-subtle)",
+                border: "1px solid var(--border)",
+                padding: "9px 12px",
                 borderRadius: "var(--radius-sm)",
                 display: "flex",
+                flexWrap: "wrap",
                 justifyContent: "space-between",
                 alignItems: "center",
+                gap: "8px",
                 fontSize: "12px"
               }}>
                 <div style={{ color: "var(--text-muted)" }}>
                   <strong>Linked Event ID:</strong>{" "}
-                  <span className="mono" style={{ color: "var(--cyan)" }}>
+                  <span className="mono" style={{ color: "var(--primary-text)" }}>
                     {f.event_id || "Cross-artifact cluster"}
                   </span>
                 </div>
                 <div style={{ color: "var(--text-dim)" }}>
-                  <strong>Examiner Rationale:</strong>{" "}
+                  <strong>Examiner Notes:</strong>{" "}
                   <span>{f.investigator_notes || "Awaiting examiner notes."}</span>
                 </div>
               </div>
@@ -194,18 +210,28 @@ export default function ValidationGateView({ findings, activeCase, onRefresh }) 
       {editingFinding && (
         <div className="modal-overlay" onClick={() => setEditingFinding(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", borderBottom: "1px solid var(--border)", paddingBottom: "12px" }}>
-              <h3 style={{ fontSize: "17px", fontWeight: "700", color: "#f8fafc" }}>
-                Examiner Review: Modify Finding & Attestation
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "16px",
+              borderBottom: "1px solid var(--border)",
+              paddingBottom: "10px"
+            }}>
+              <h3 style={{ fontSize: "16px", fontWeight: "700", color: "var(--text-main)" }}>
+                Examiner Review: Edit Finding
               </h3>
-              <button onClick={() => setEditingFinding(null)} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
-                <X size={20} />
+              <button
+                onClick={() => setEditingFinding(null)}
+                style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
+              >
+                <X size={18} />
               </button>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "20px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "18px" }}>
               <div>
-                <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "6px" }}>
+                <label style={{ fontSize: "11.5px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "5px" }}>
                   FINDING TITLE
                 </label>
                 <input
@@ -218,7 +244,7 @@ export default function ValidationGateView({ findings, activeCase, onRefresh }) 
               </div>
 
               <div>
-                <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "6px" }}>
+                <label style={{ fontSize: "11.5px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "5px" }}>
                   VALIDATION STATUS
                 </label>
                 <select
@@ -235,8 +261,8 @@ export default function ValidationGateView({ findings, activeCase, onRefresh }) 
               </div>
 
               <div>
-                <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "6px" }}>
-                  EXAMINER VERIFICATION NOTES (LEGAL RECORD)
+                <label style={{ fontSize: "11.5px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "5px" }}>
+                  EXAMINER VERIFICATION NOTES
                 </label>
                 <textarea
                   className="input-control"
@@ -254,7 +280,7 @@ export default function ValidationGateView({ findings, activeCase, onRefresh }) 
                 Cancel
               </button>
               <button className="btn btn-primary" onClick={saveEdit} disabled={submitting}>
-                {submitting ? "Saving..." : "Save Validation Decision"}
+                {submitting ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>

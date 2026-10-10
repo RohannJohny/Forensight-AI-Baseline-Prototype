@@ -1,25 +1,32 @@
 import React from "react";
-import { FileText, Shield, Clock, User, CheckCircle2 } from "lucide-react";
+import { FileText, Shield, User } from "lucide-react";
 
-export default function AuditLogView({ auditLogs, activeCase }) {
+export default function AuditLogView({ auditLogs, _activeCase }) {
   return (
-    <div style={{ padding: "28px", maxWidth: "1400px", margin: "0 auto" }}>
+    <div style={{ padding: "24px 28px", maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "20px",
+        flexWrap: "wrap",
+        gap: "12px"
+      }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-            <FileText size={20} color="var(--cyan)" />
-            <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#f8fafc" }}>
-              Immutable Chain of Custody & Forensic Audit Trail
+            <FileText size={20} color="var(--primary)" />
+            <h2 style={{ fontSize: "19px", fontWeight: "700", color: "var(--text-main)" }}>
+              Forensic Chain of Custody & Audit Trail
             </h2>
           </div>
           <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-            Module 1 & 7: Legally compliant record of all evidence ingestions, cryptographic verifications, examiner validation decisions, and decryption events.
+            Immutable chronological audit record of evidence ingestions, verifications, and examiner validations.
           </p>
         </div>
 
         <span className="badge-tag badge-emerald">
-          <Shield size={13} /> Tamper-Proof Audit Trail
+          <Shield size={13} /> Tamper-Evident Ledger
         </span>
       </div>
 
@@ -44,21 +51,21 @@ export default function AuditLogView({ auditLogs, activeCase }) {
             ) : (
               auditLogs.map((log) => (
                 <tr key={log.log_id}>
-                  <td className="mono" style={{ fontSize: "12px", color: "var(--cyan)", whiteSpace: "nowrap" }}>
-                    {new Date(log.timestamp).toUTCString().replace("GMT", "UTC")}
+                  <td className="mono" style={{ fontSize: "12px", color: "var(--primary-text)", whiteSpace: "nowrap" }}>
+                    {log.timestamp ? new Date(log.timestamp).toUTCString().replace("GMT", "UTC") : "—"}
                   </td>
                   <td>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12.5px" }}>
                       <User size={13} color="var(--emerald)" />
-                      <span style={{ fontWeight: "600", color: "#f8fafc" }}>{log.user_name}</span>
+                      <span style={{ fontWeight: "600", color: "var(--text-main)" }}>{log.user_name}</span>
                     </div>
                   </td>
                   <td>
-                    <span className="badge-tag badge-cyan" style={{ fontSize: "10px" }}>
+                    <span className="badge-tag badge-cyan" style={{ fontSize: "10.5px" }}>
                       {log.action}
                     </span>
                   </td>
-                  <td style={{ fontSize: "12.5px", color: "var(--text-dim)", lineHeight: "1.4" }}>
+                  <td style={{ fontSize: "12.5px", color: "var(--text-dim)", lineHeight: "1.45" }}>
                     {log.details}
                   </td>
                 </tr>

@@ -9,6 +9,7 @@ an event/artifact/evidence citation where available.
 from __future__ import annotations
 
 import re
+from datetime import datetime
 from typing import Any, Dict, List, Sequence, Tuple
 
 from app.ai.retriever import retrieve_events
@@ -90,7 +91,7 @@ class EvidenceGroundedAssistant:
                 # Preserve chronological ordering for temporal-context responses
                 ranked = sorted(
                     ranked,
-                    key=lambda item: getattr(item[0], "timestamp", None),
+                    key=lambda item: getattr(item[0], "timestamp", None) or datetime.min,
                 )
 
         matched_events = [event for event, _score in ranked]
@@ -277,8 +278,9 @@ class EvidenceGroundedAssistant:
 
         for idx, ev in enumerate(events[:6], 1):
             citation = f"[Event ID: {ev.event_id} | Artifact: {getattr(ev, 'artifact_id', 'N/A')}]"
+            ts_str = ev.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') if getattr(ev, 'timestamp', None) else "N/A"
             lines.append(
-                f"{idx}. **{ev.event_type}** at {ev.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')} — "
+                f"{idx}. **{ev.event_type}** at {ts_str} — "
                 f"{cls._format_event_brief(ev)} `{citation}`"
             )
 

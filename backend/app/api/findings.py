@@ -4,10 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.models import Case, Finding, Event, AuditLog, Artifact, Evidence
+from app.models.models import Case, Finding, Event, AuditLog, Artifact, Evidence, AttackNode
 from app.schemas.schemas import FindingResponse, FindingCreate, FindingUpdate
 from app.ai.anomaly_engine import AnomalyDetectionEngine
 from app.ai.evidence_classifier import EvidenceClassificationEngine
+from app.ai.mitre_mapper import MitreAttackMapper
 
 
 router = APIRouter(tags=["Findings & Examiner Validation Gate (Module 5 & 6)"])
@@ -833,7 +834,7 @@ def run_correlation_and_detection(case_id: str, db: Session = Depends(get_db)):
 
             elif (
                 first.event_type == "PROCESS_CREATE"
-                and second.event_type == "FILE_DROP"
+                and second.event_type in ("FILE_DROP", "FILE_CREATE")
             ):
                 created_by_pid = get_created_by_pid(second)
 
@@ -857,8 +858,8 @@ def run_correlation_and_detection(case_id: str, db: Session = Depends(get_db)):
             # -------------------------------------------------
 
             elif (
-                first.event_type == "FILE_DROP"
-                and second.event_type == "REGISTRY_PERSISTENCE"
+                first.event_type in ("FILE_DROP", "FILE_CREATE")
+                and second.event_type in ("REGISTRY_PERSISTENCE", "REGISTRY_WRITE")
             ):
                 dropped_file = get_target_filename(first)
 
@@ -1382,7 +1383,45 @@ def run_correlation_and_detection(case_id: str, db: Session = Depends(get_db)):
         )
 
     # ---------------------------------------------------------
-    # 6. Return correlation results
+    # 6. Map findings to MITRE ATT&CK and persist AttackNodes
+    # ---------------------------------------------------------
+    case_findings = db.query(Finding).filter(Finding.case_id == case_id).all()
+    attack_nodes_created = 0
+    for f in case_findings:
+        existing_node = (
+            db.query(AttackNode)
+            .filter(
+                AttackNode.case_id == case_id,
+                AttackNode.finding_id == f.finding_id,
+            )
+            .first()
+        )
+        stage_name, stage_order, mitre_technique = (
+            MitreAttackMapper.map_finding_to_stage(
+                f.finding_title, f.description, f.finding_type
+            )
+        )
+        if not existing_node:
+            new_node = AttackNode(
+                case_id=case_id,
+                finding_id=f.finding_id,
+                mitre_technique=mitre_technique,
+                stage_name=stage_name,
+                stage_order=stage_order,
+                description=f.finding_title,
+            )
+            db.add(new_node)
+            attack_nodes_created += 1
+        else:
+            existing_node.mitre_technique = mitre_technique
+            existing_node.stage_name = stage_name
+            existing_node.stage_order = stage_order
+            existing_node.description = f.finding_title
+
+    db.commit()
+
+    # ---------------------------------------------------------
+    # 7. Return correlation results
     # ---------------------------------------------------------
 
     return {
@@ -1397,4 +1436,5 @@ def run_correlation_and_detection(case_id: str, db: Session = Depends(get_db)):
         "correlations": correlations,
         "attack_chains_found": len(formatted_attack_chains),
         "attack_chains": formatted_attack_chains,
+        "attack_nodes_persisted": attack_nodes_created,
     }

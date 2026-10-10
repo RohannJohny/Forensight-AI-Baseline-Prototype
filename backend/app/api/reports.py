@@ -72,8 +72,9 @@ def generate_and_encrypt_report(case_id: str, payload: ReportGenerateRequest, db
             if f.investigator_notes:
                 lines.append(f"- **Examiner Verification Notes:** {f.investigator_notes}")
             if f.event:
+                ts_str = f.event.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') if f.event.timestamp else "N/A"
                 lines.append(
-                    f"- **Supporting Evidence ID:** `{f.event.event_id}` (Source: `{f.event.source_entity}`, Timestamp: {f.event.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')})"
+                    f"- **Supporting Evidence ID:** `{f.event.event_id}` (Source: `{f.event.source_entity}`, Timestamp: {ts_str})"
                 )
             lines.append("")
 
@@ -129,6 +130,15 @@ def list_reports_for_case(case_id: str, db: Session = Depends(get_db)):
     """Lists all encrypted finalized reports for an investigation case."""
     reports = db.query(Report).filter(Report.case_id == case_id).order_by(Report.finalized_at.desc()).all()
     return reports
+
+
+@router.get("/cases/{case_id}/report", response_model=ReportResponse)
+def get_latest_report_for_case(case_id: str, db: Session = Depends(get_db)):
+    """Retrieves the latest encrypted finalized report for an investigation case."""
+    report = db.query(Report).filter(Report.case_id == case_id).order_by(Report.finalized_at.desc()).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="No reports found for this case")
+    return report
 
 
 @router.get("/reports/{report_id}/decrypt", response_model=ReportDecryptResponse)

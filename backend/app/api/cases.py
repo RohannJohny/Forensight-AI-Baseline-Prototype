@@ -186,3 +186,24 @@ def get_case_audit_logs(case_id: str, db: Session = Depends(get_db)):
     """Returns immutable chain-of-custody audit logs."""
     logs = db.query(AuditLog).filter(AuditLog.case_id == case_id).order_by(AuditLog.timestamp.desc()).all()
     return logs
+
+
+@router.post("/{case_id}/assistant/query")
+def query_case_assistant(case_id: str, payload: Dict[str, Any], db: Session = Depends(get_db)):
+    """Grounded AI investigation assistant endpoint scoped to a case."""
+    case = db.query(Case).filter(Case.case_id == case_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    query_text = payload.get("query", "")
+    events = (
+        db.query(Event)
+        .join(Artifact, Event.artifact_id == Artifact.artifact_id)
+        .join(Evidence, Artifact.evidence_id == Evidence.evidence_id)
+        .filter(Evidence.case_id == case_id)
+        .all()
+    )
+    findings = db.query(Finding).filter(Finding.case_id == case_id).all()
+    from app.ai.rag_assistant import EvidenceGroundedAssistant
+    result = EvidenceGroundedAssistant.query(case, events, findings, query_text)
+    return result

@@ -64,7 +64,8 @@ def seed_operation_blackout(db: Session) -> Case:
         hash_sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         hash_sha1="da39a3ee5e6b4b0d3255bfef95601890afd80709",
         hash_md5="d41d8cd98f00b204e9800998ecf8427e",
-        byte_size="42949672960"  # 40 GB
+        byte_size="42949672960",  # 40 GB
+        processing_status="COMPLETED"
     )
     ev2 = Evidence(
         case_id=case.case_id,
@@ -74,7 +75,8 @@ def seed_operation_blackout(db: Session) -> Case:
         hash_sha256="8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4",
         hash_sha1="5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
         hash_md5="098f6bcd4621d373cade4e832627b4f6",
-        byte_size="17179869184"  # 16 GB
+        byte_size="17179869184",  # 16 GB
+        processing_status="COMPLETED"
     )
     ev3 = Evidence(
         case_id=case.case_id,
@@ -84,7 +86,8 @@ def seed_operation_blackout(db: Session) -> Case:
         hash_sha256="c592048b32e5f35d4f3576326f49b7645014e23ec9599029528f80139103b228",
         hash_sha1="250cf8b51c773f3f8dc8b4be867a9a025702e79e",
         hash_md5="ad0234829205b9033196ba818f7a872b",
-        byte_size="524288000"  # 500 MB
+        byte_size="524288000",  # 500 MB
+        processing_status="COMPLETED"
     )
     ev4 = Evidence(
         case_id=case.case_id,
@@ -94,7 +97,8 @@ def seed_operation_blackout(db: Session) -> Case:
         hash_sha256="a94a8fe5ccb19ba61c4c0873d391e987982fbbd34208a8e1b6f00ef46ce16f6b",
         hash_sha1="b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
         hash_md5="900150983cd24fb0d6963f7d28e17f72",
-        byte_size="1073741824"  # 1 GB
+        byte_size="1073741824",  # 1 GB
+        processing_status="COMPLETED"
     )
     db.add_all([ev1, ev2, ev3, ev4])
     db.flush()

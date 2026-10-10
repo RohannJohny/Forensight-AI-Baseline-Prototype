@@ -16,10 +16,13 @@ from app.api.findings import router as findings_router
 from app.api.attack_path import router as attack_path_router
 from app.api.ai import router as ai_router
 from app.api.reports import router as reports_router
+from app.api.auth import router as auth_router
 
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    from app.core.database import sync_database_schema
+    sync_database_schema(engine)
     db = SessionLocal()
     try:
         case = seed_operation_blackout(db)
@@ -60,6 +63,14 @@ app.include_router(findings_router, prefix=API_PREFIX)
 app.include_router(attack_path_router, prefix=API_PREFIX)
 app.include_router(ai_router, prefix=API_PREFIX)
 app.include_router(reports_router, prefix=API_PREFIX)
+app.include_router(auth_router, prefix=API_PREFIX)
+
+
+@app.get("/api/system/tools")
+def get_system_tools():
+    """Returns detected forensic tool statuses from M1 client."""
+    from app.forensics.m1_client import M1Client
+    return {"tools": M1Client.get_tool_status()}
 
 
 @app.get("/")

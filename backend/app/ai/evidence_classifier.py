@@ -125,11 +125,11 @@ class EvidenceClassificationEngine:
                 "The normalized event represents registry activity associated with persistence analysis.",
             )
 
-        elif event_type == "FILE_DROP":
+        elif event_type in ("FILE_DROP", "FILE_CREATE", "FILE_CREATED", "FILE_MODIFY", "FILE_MODIFIED", "FILE_ACCESS", "FILE_ACCESSED", "FILE_DELETE", "FILE_DELETED", "FILE_DOWNLOAD"):
             add(
                 "FILE_ACTIVITY",
                 0.90,
-                "The normalized event records creation or dropping of a file.",
+                "The normalized event records creation, modification, or access of a file.",
             )
 
         elif event_type == "NETWORK_CONNECTION":

@@ -5,18 +5,17 @@ import {
   Sparkles,
   Link2,
   ShieldCheck,
-  Cpu,
   User,
-  CheckCircle2,
-  AlertCircle
+  Loader2
 } from "lucide-react";
 import { queryAI } from "../services/api";
 
 export default function AIAssistantView({ activeCase }) {
+  const caseNum = activeCase?.case_number || "FS-2026-001";
   const [messages, setMessages] = useState([
     {
       sender: "ai",
-      text: `Greetings, Examiner Rohan. I am your **Forensight AI Investigation Assistant** for Case **${activeCase?.case_number || "FS-2026-001"}**.\n\nAll my responses are strictly grounded in normalized digital evidence (Windows Event logs, Sysmon, Registry hives, Volatility memory records, and Zeek PCAP flows). I cite verifiable Event IDs for every claim.\n\nHow can I assist your investigation?`,
+      text: `Hello Examiner. I am your Forensight Assistant for Case ${caseNum}.\n\nAll my responses are grounded in normalized evidence artifacts (Windows Event logs, Sysmon, Registry hives, Volatility memory records, and Zeek network flows). Every claim is cited with verifiable Event IDs.\n\nHow can I assist your investigation?`,
       citations: [],
       confidence: 1.0,
       timestamp: new Date().toLocaleTimeString()
@@ -25,6 +24,20 @@ export default function AIAssistantView({ activeCase }) {
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (activeCase) {
+      setMessages([
+        {
+          sender: "ai",
+          text: `Hello Examiner. I am your Forensight Assistant for Case ${activeCase.case_number} (${activeCase.case_name || "Active Case"}).\n\nAll my responses are grounded in normalized evidence artifacts for this investigation. Every claim is cited with verifiable Event IDs.\n\nHow can I assist your investigation?`,
+          citations: [],
+          confidence: 1.0,
+          timestamp: new Date().toLocaleTimeString()
+        }
+      ]);
+    }
+  }, [activeCase?.case_id]);
 
   const quickPrompts = [
     "Summarize the complete incident timeline and attack sequence",
@@ -68,7 +81,7 @@ export default function AIAssistantView({ activeCase }) {
     } catch (err) {
       const errorMsg = {
         sender: "ai",
-        text: `Error connecting to AI reasoning service: ${err.message}. Ensure backend is running.`,
+        text: `Error connecting to AI service: ${err.message}. Please verify the backend API is active.`,
         citations: [],
         confidence: 0.0,
         timestamp: new Date().toLocaleTimeString()
@@ -80,44 +93,75 @@ export default function AIAssistantView({ activeCase }) {
   };
 
   return (
-    <div style={{ padding: "28px", maxWidth: "1200px", margin: "0 auto", height: "calc(100vh - 64px)", display: "flex", flexDirection: "column" }}>
+    <div style={{
+      padding: "24px 28px",
+      maxWidth: "1200px",
+      margin: "0 auto",
+      width: "100%",
+      height: "calc(100vh - 60px)",
+      display: "flex",
+      flexDirection: "column"
+    }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexShrink: 0 }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "14px",
+        flexShrink: 0,
+        flexWrap: "wrap",
+        gap: "10px"
+      }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-            <Bot size={20} color="var(--cyan)" />
-            <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#f8fafc" }}>
-              Evidence-Grounded AI Assistant (RAG Engine)
+            <Bot size={20} color="var(--primary)" />
+            <h2 style={{ fontSize: "19px", fontWeight: "700", color: "var(--text-main)" }}>
+              Evidence-Grounded AI Assistant
             </h2>
           </div>
           <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-            Module 4: Zero-hallucination conversational interface citing precise event IDs, sources, and timestamps.
+            Conversational investigative query engine citing verifiable Event IDs and timestamps.
           </p>
         </div>
 
         <span className="badge-tag badge-cyan">
-          <ShieldCheck size={13} /> Strict Artifact Grounding
+          <ShieldCheck size={13} /> Evidence Grounded
         </span>
       </div>
 
       {/* Suggested Quick Queries */}
-      <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "10px", marginBottom: "10px", flexShrink: 0 }}>
+      <div style={{
+        display: "flex",
+        gap: "8px",
+        overflowX: "auto",
+        paddingBottom: "8px",
+        marginBottom: "8px",
+        flexShrink: 0
+      }}>
         {quickPrompts.map((prompt, idx) => (
           <button
             key={idx}
             className="btn btn-secondary"
-            style={{ fontSize: "11.5px", padding: "6px 12px", whiteSpace: "nowrap", borderRadius: "16px" }}
+            style={{ fontSize: "11.5px", padding: "5px 11px", whiteSpace: "nowrap", borderRadius: "16px" }}
             onClick={() => handleSend(prompt)}
             disabled={loading}
           >
-            <Sparkles size={12} color="var(--cyan)" />
+            <Sparkles size={12} color="var(--primary)" />
             {prompt}
           </button>
         ))}
       </div>
 
-      {/* Chat Messages Log */}
-      <div className="forensic-card" style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "18px", padding: "20px", marginBottom: "16px" }}>
+      {/* Chat Messages Stream */}
+      <div className="forensic-card" style={{
+        flex: 1,
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: "16px",
+        padding: "18px 20px",
+        marginBottom: "14px"
+      }}>
         {messages.map((m, idx) => {
           const isUser = m.sender === "user";
 
@@ -128,8 +172,8 @@ export default function AIAssistantView({ activeCase }) {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: isUser ? "flex-end" : "flex-start",
-                gap: "6px",
-                maxWidth: "92%",
+                gap: "5px",
+                maxWidth: "88%",
                 alignSelf: isUser ? "flex-end" : "flex-start"
               }}
             >
@@ -142,10 +186,10 @@ export default function AIAssistantView({ activeCase }) {
                   </>
                 ) : (
                   <>
-                    <Bot size={13} color="var(--cyan)" />
-                    <span style={{ color: "var(--cyan)", fontWeight: "600" }}>Forensight Assistant</span>
+                    <Bot size={13} color="var(--primary)" />
+                    <span style={{ color: "var(--primary-text)", fontWeight: "600" }}>Forensight Assistant</span>
                     {m.confidence > 0 && (
-                      <span className="badge-tag badge-emerald" style={{ fontSize: "9px", padding: "1px 5px" }}>
+                      <span className="badge-tag badge-emerald" style={{ fontSize: "9.5px", padding: "1px 5px" }}>
                         Confidence: {(m.confidence * 100).toFixed(0)}%
                       </span>
                     )}
@@ -156,46 +200,56 @@ export default function AIAssistantView({ activeCase }) {
 
               {/* Message Bubble */}
               <div style={{
-                background: isUser ? "rgba(6, 182, 212, 0.15)" : "rgba(15, 23, 42, 0.9)",
-                border: `1px solid ${isUser ? "rgba(6, 182, 212, 0.35)" : "var(--border)"}`,
+                backgroundColor: isUser ? "var(--primary-subtle)" : "var(--bg-card-subtle)",
+                border: `1px solid ${isUser ? "var(--primary-border)" : "var(--border)"}`,
                 borderRadius: "var(--radius-md)",
-                padding: "16px 20px",
+                padding: "14px 18px",
                 fontSize: "13.5px",
-                color: "#f8fafc",
-                lineHeight: "1.6",
+                color: "var(--text-main)",
+                lineHeight: "1.55",
                 whiteSpace: "pre-wrap"
               }}>
                 {m.text}
 
-                {/* Evidence Citations Section */}
+                {/* Citations */}
                 {m.citations && m.citations.length > 0 && (
-                  <div style={{ marginTop: "16px", borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
-                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--cyan)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <Link2 size={13} />
-                      Verifiable Forensic Evidence Citations ({m.citations.length})
+                  <div style={{ marginTop: "14px", borderTop: "1px solid var(--border)", paddingTop: "10px" }}>
+                    <div style={{
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      color: "var(--primary-text)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.4px",
+                      marginBottom: "6px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px"
+                    }}>
+                      <Link2 size={12} />
+                      Verifiable Forensic Citations ({m.citations.length})
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                       {m.citations.map((c, cIdx) => (
                         <div
                           key={cIdx}
                           style={{
-                            background: "rgba(0, 0, 0, 0.3)",
-                            border: "1px solid rgba(6, 182, 212, 0.2)",
+                            backgroundColor: "var(--bg-card)",
+                            border: "1px solid var(--border)",
                             borderRadius: "var(--radius-sm)",
-                            padding: "8px 12px",
+                            padding: "8px 10px",
                             fontSize: "11.5px"
                           }}
                         >
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                            <span className="mono" style={{ color: "var(--cyan)", fontWeight: "600" }}>
-                              Event ID: {c.event_id.substring(0, 8)}...
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
+                            <span className="mono" style={{ color: "var(--primary-text)", fontWeight: "600" }}>
+                              Event: {c.event_id ? `${c.event_id.substring(0, 8)}...` : "—"}
                             </span>
-                            <span className="mono" style={{ color: "var(--emerald)" }}>
+                            <span className="mono" style={{ color: "var(--emerald-text)" }}>
                               {c.timestamp}
                             </span>
                           </div>
                           <div style={{ color: "var(--text-dim)" }}>
-                            <strong style={{ color: "#e2e8f0" }}>{c.source_entity}:</strong> {c.summary}
+                            <strong style={{ color: "var(--text-main)" }}>{c.source_entity}:</strong> {c.summary}
                           </div>
                         </div>
                       ))}
@@ -208,28 +262,33 @@ export default function AIAssistantView({ activeCase }) {
         })}
 
         {loading && (
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--cyan)", fontSize: "13px" }}>
-            <Cpu size={16} className="spin" />
-            <span>Cross-correlating normalized forensic artifacts and building evidence citations...</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--primary-text)", fontSize: "12.5px" }}>
+            <Loader2 size={15} className="spin" style={{ animation: "spin 0.8s linear infinite" }} />
+            <span>Cross-correlating evidence artifacts and compiling citations...</span>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input Bar */}
-      <div style={{ display: "flex", gap: "12px", flexShrink: 0 }}>
+      <div style={{ display: "flex", gap: "10px", flexShrink: 0 }}>
         <input
           type="text"
           className="input-control"
-          style={{ flex: 1, padding: "12px 18px", fontSize: "13.5px" }}
-          placeholder="Ask a forensic question (e.g. 'Show encoded PowerShell commands', 'Which registry key was altered?')..."
+          style={{ flex: 1, padding: "10px 14px", fontSize: "13px" }}
+          placeholder="Ask a question (e.g., 'Show encoded PowerShell commands', 'Which registry key was altered?')..."
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           disabled={loading}
         />
-        <button className="btn btn-primary" style={{ padding: "0 22px" }} onClick={() => handleSend()} disabled={loading || !inputText.trim()}>
-          <Send size={16} /> Send Query
+        <button
+          className="btn btn-primary"
+          style={{ padding: "0 18px" }}
+          onClick={() => handleSend()}
+          disabled={loading || !inputText.trim()}
+        >
+          <Send size={15} /> Send
         </button>
       </div>
     </div>

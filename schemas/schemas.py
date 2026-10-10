@@ -62,6 +62,8 @@ class EvidenceResponse(EvidenceBase):
     hash_sha1: Optional[str] = None
     hash_md5: Optional[str] = None
     byte_size: Optional[str] = None
+    processing_status: Optional[str] = "COMPLETED"
+    processing_error: Optional[str] = None
     ingested_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -92,8 +94,9 @@ class ArtifactResponse(BaseModel):
 # --- Event / Timeline Schemas ---
 class EventResponse(BaseModel):
     event_id: str
+    source_event_id: Optional[str] = None
     artifact_id: str
-    timestamp: datetime
+    timestamp: Optional[datetime] = None
     event_type: str
     source_entity: str
     user_account: Optional[str] = None

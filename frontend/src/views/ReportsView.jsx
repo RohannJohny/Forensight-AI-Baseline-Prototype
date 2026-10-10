@@ -1,28 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FileLock2,
   KeyRound,
-  ShieldCheck,
   CheckCircle2,
-  AlertTriangle,
   FileText,
   Lock,
   Unlock,
   Printer,
-  X,
-  ExternalLink
+  Download,
+  AlertTriangle,
+  X
 } from "lucide-react";
 import { generateReport, decryptReport } from "../services/api";
 
-export default function ReportsView({ reports, activeCase, onRefresh }) {
-  const [reportTitle, setReportTitle] = useState("Operation Blackout - Courtroom Forensic Dossier");
+export default function ReportsView({ reports = [], activeCase, onRefresh }) {
+  const [reportTitle, setReportTitle] = useState("");
   const [examinerName, setExaminerName] = useState("Rohan Johny (Lead Forensic Examiner)");
-  const [execSummary, setExecSummary] = useState(
-    "Targeted multi-stage cyber intrusion against WS-FIN-04 resulting in macro execution, encoded PowerShell payload, registry persistence, credential dumping, SMB lateral movement, and data exfiltration."
-  );
+  const [execSummary, setExecSummary] = useState("");
   const [generating, setGenerating] = useState(false);
   const [decryptingId, setDecryptingId] = useState(null);
   const [activeDecryptedReport, setActiveDecryptedReport] = useState(null);
+
+  // Sync report title and summary dynamically with active case (Tasks 9, 11, 13)
+  useEffect(() => {
+    if (activeCase) {
+      setReportTitle(`${activeCase.case_name || activeCase.case_number} - Forensic Dossier`);
+      setExecSummary(
+        activeCase.description ||
+        `Forensic investigation dossier for ${activeCase.case_number}. Digital evidence acquired, verified, and analyzed under ISO/IEC 27037 standards.`
+      );
+    }
+  }, [activeCase]);
 
   const handleGenerate = async () => {
     if (!reportTitle.trim() || !activeCase) return;
@@ -35,8 +43,8 @@ export default function ReportsView({ reports, activeCase, onRefresh }) {
         executive_summary: execSummary,
         include_raw_hashes: true
       });
-      alert("Finalized Forensic Dossier compiled, encrypted with Two-Key AES-256-GCM, and stored in the secure vault!");
-      onRefresh();
+      alert("Forensic Dossier compiled and encrypted into the Two-Key vault.");
+      if (onRefresh) onRefresh();
     } catch (err) {
       alert("Report generation failed: " + err.message);
     } finally {
@@ -56,19 +64,37 @@ export default function ReportsView({ reports, activeCase, onRefresh }) {
     }
   };
 
+  const handleDownloadDecrypted = () => {
+    if (!activeDecryptedReport?.plaintext_content) return;
+    const blob = new Blob([activeDecryptedReport.plaintext_content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(activeDecryptedReport.report_name || "report").replace(/\s+/g, "_")}_DECRYPTED.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div style={{ padding: "28px", maxWidth: "1400px", margin: "0 auto" }}>
+    <div style={{ padding: "24px 28px", maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "20px",
+        flexWrap: "wrap",
+        gap: "12px"
+      }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
             <FileLock2 size={20} color="var(--purple)" />
-            <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#f8fafc" }}>
-              Professional Report Generation & Two-Key Encrypted Vault
+            <h2 style={{ fontSize: "19px", fontWeight: "700", color: "var(--text-main)" }}>
+              Forensic Reports & Encrypted Vault
             </h2>
           </div>
           <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-            Module 6 & 7: Court-ready forensic dossier compilation, Two-Key cryptography (REK + Master Key AES-256-GCM), and SHA-256 tamper-proof ledger.
+            Courtroom dossier compilation with Two-Key cryptography (AES-256-GCM) and tamper verification.
           </p>
         </div>
 
@@ -77,18 +103,50 @@ export default function ReportsView({ reports, activeCase, onRefresh }) {
         </span>
       </div>
 
-      {/* Grid: Generator on Left, Vault on Right */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: "24px", marginBottom: "30px" }}>
+      {/* Investigator Validation Policy Notice (Task 9) */}
+      <div style={{
+        backgroundColor: "var(--purple-subtle)",
+        border: "1px solid var(--purple-border)",
+        borderRadius: "var(--radius-sm)",
+        padding: "12px 16px",
+        marginBottom: "20px",
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        fontSize: "12.5px",
+        color: "var(--purple-text)"
+      }}>
+        <AlertTriangle size={16} color="var(--purple)" style={{ flexShrink: 0 }} />
+        <div>
+          <strong>Investigator Validation Workflow Enforced:</strong> Final report generation compiles only findings that have been explicitly <em>Accepted</em> in the Examiner Validation Gate. Any Pending or Rejected findings are strictly omitted from the court-ready cryptographic dossier.
+        </div>
+      </div>
+
+      {/* Grid: Compiler on Left, Vault on Right */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+        gap: "20px",
+        marginBottom: "24px"
+      }}>
         {/* Compiler Form */}
         <div className="forensic-card">
-          <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#f8fafc", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <FileText size={17} color="var(--cyan)" />
-            Compile Standardized Forensic Dossier
+          <h3 style={{
+            fontSize: "15px",
+            fontWeight: "700",
+            color: "var(--text-main)",
+            marginBottom: "14px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px"
+          }}>
+            <FileText size={16} color="var(--primary)" />
+            Compile Forensic Dossier
           </h3>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div>
-              <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "5px" }}>
+              <label style={{ fontSize: "11.5px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "5px" }}>
                 REPORT TITLE
               </label>
               <input
@@ -97,12 +155,13 @@ export default function ReportsView({ reports, activeCase, onRefresh }) {
                 style={{ width: "100%" }}
                 value={reportTitle}
                 onChange={(e) => setReportTitle(e.target.value)}
+                placeholder="e.g. Case Incident Forensic Dossier"
               />
             </div>
 
             <div>
-              <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "5px" }}>
-                LEAD FORENSIC EXAMINER SIGN-OFF
+              <label style={{ fontSize: "11.5px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "5px" }}>
+                LEAD EXAMINER SIGN-OFF
               </label>
               <input
                 type="text"
@@ -114,7 +173,7 @@ export default function ReportsView({ reports, activeCase, onRefresh }) {
             </div>
 
             <div>
-              <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "5px" }}>
+              <label style={{ fontSize: "11.5px", color: "var(--text-muted)", fontWeight: "600", display: "block", marginBottom: "5px" }}>
                 EXECUTIVE SUMMARY & ATTESTATION
               </label>
               <textarea
@@ -123,58 +182,74 @@ export default function ReportsView({ reports, activeCase, onRefresh }) {
                 style={{ width: "100%", resize: "vertical" }}
                 value={execSummary}
                 onChange={(e) => setExecSummary(e.target.value)}
+                placeholder="Narrative summary of the incident and forensic conclusions..."
               />
             </div>
 
-            <div style={{ background: "rgba(168, 85, 247, 0.06)", border: "1px solid rgba(168, 85, 247, 0.2)", borderRadius: "var(--radius-sm)", padding: "12px", fontSize: "12px", color: "var(--text-dim)" }}>
-              🔒 Compiling will automatically extract verified findings, compute the plaintext SHA-256 hash, generate an isolated 256-bit REK, encrypt the payload with AES-256-GCM, and wrap the REK using the Master Key.
+            <div style={{
+              backgroundColor: "var(--bg-card-subtle)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-sm)",
+              padding: "10px 12px",
+              fontSize: "11.5px",
+              color: "var(--text-dim)"
+            }}>
+              Compiling extracts validated findings, generates a unique 256-bit REK, encrypts using AES-256-GCM, and stores in the tamper-proof ledger.
             </div>
 
             <button
               className="btn btn-primary"
-              style={{ padding: "12px", width: "100%", marginTop: "4px" }}
+              style={{ padding: "10px", width: "100%", marginTop: "4px" }}
               onClick={handleGenerate}
-              disabled={generating}
+              disabled={generating || !activeCase}
             >
-              <FileLock2 size={16} />
-              {generating ? "Encrypting & Signing..." : "Finalize, Encrypt & Store in Vault"}
+              <FileLock2 size={15} />
+              {generating ? "Encrypting & Storing..." : "Finalize & Encrypt Dossier"}
             </button>
           </div>
         </div>
 
         {/* Encrypted Reports Vault List */}
         <div className="forensic-card">
-          <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#f8fafc", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <Lock size={17} color="var(--purple)" />
-            Encrypted Reports Vault Ledger ({reports?.length || 0})
+          <h3 style={{
+            fontSize: "15px",
+            fontWeight: "700",
+            color: "var(--text-main)",
+            marginBottom: "14px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px"
+          }}>
+            <Lock size={16} color="var(--purple)" />
+            Vault Records ({reports?.length || 0})
           </h3>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", maxHeight: "450px", overflowY: "auto" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "420px", overflowY: "auto" }}>
             {(!reports || reports.length === 0) ? (
-              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", fontSize: "13px" }}>
-                No finalized reports in the secure vault yet. Compile a dossier using the generator.
+              <div style={{ textAlign: "center", padding: "36px 0", color: "var(--text-muted)", fontSize: "13px" }}>
+                No finalized reports in the vault for this case yet. Use the form to compile and encrypt a dossier.
               </div>
             ) : (
               reports.map((rep) => (
                 <div
                   key={rep.report_id}
                   style={{
-                    background: "rgba(0, 0, 0, 0.25)",
+                    backgroundColor: "var(--bg-card-subtle)",
                     border: "1px solid var(--border)",
                     borderRadius: "var(--radius-sm)",
-                    padding: "16px",
+                    padding: "14px",
                     display: "flex",
                     flexDirection: "column",
-                    gap: "10px"
+                    gap: "8px"
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div>
-                      <div style={{ fontSize: "14px", fontWeight: "700", color: "#f8fafc" }}>
+                      <div style={{ fontSize: "13.5px", fontWeight: "700", color: "var(--text-main)" }}>
                         {rep.report_name}
                       </div>
                       <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
-                        Finalized: {new Date(rep.finalized_at).toUTCString()}
+                        Finalized: {rep.finalized_at ? new Date(rep.finalized_at).toUTCString() : "—"}
                       </div>
                     </div>
                     <span className="badge-tag badge-emerald" style={{ fontSize: "10px" }}>
@@ -183,21 +258,21 @@ export default function ReportsView({ reports, activeCase, onRefresh }) {
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px" }}>
-                    <span style={{ color: "var(--text-muted)" }}>SHA-256 Plaintext Hash:</span>
-                    <span className="mono" style={{ color: "var(--cyan)" }}>
-                      {rep.integrity_hash.substring(0, 18)}...{rep.integrity_hash.substring(50)}
+                    <span style={{ color: "var(--text-muted)" }}>SHA-256 Ledger:</span>
+                    <span className="mono" style={{ color: "var(--primary-text)" }}>
+                      {rep.integrity_hash ? `${rep.integrity_hash.substring(0, 16)}...${rep.integrity_hash.substring(48)}` : "—"}
                     </span>
                   </div>
 
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "4px" }}>
                     <button
                       className="btn btn-emerald"
-                      style={{ fontSize: "11.5px", padding: "5px 12px" }}
+                      style={{ fontSize: "11.5px", padding: "5px 11px" }}
                       onClick={() => handleDecrypt(rep.report_id)}
                       disabled={decryptingId === rep.report_id}
                     >
                       <Unlock size={13} />
-                      {decryptingId === rep.report_id ? "Unwrapping Key..." : "Decrypt & Verify Integrity"}
+                      {decryptingId === rep.report_id ? "Decrypting..." : "Decrypt & Verify"}
                     </button>
 
                     <a
@@ -205,9 +280,9 @@ export default function ReportsView({ reports, activeCase, onRefresh }) {
                       target="_blank"
                       rel="noreferrer"
                       className="btn btn-secondary"
-                      style={{ fontSize: "11.5px", padding: "5px 12px", textDecoration: "none" }}
+                      style={{ fontSize: "11.5px", padding: "5px 11px", textDecoration: "none" }}
                     >
-                      <Printer size={13} /> Courtroom View
+                      <Printer size={13} /> Dossier View
                     </a>
                   </div>
                 </div>
@@ -217,55 +292,81 @@ export default function ReportsView({ reports, activeCase, onRefresh }) {
         </div>
       </div>
 
-      {/* Decrypted Report Modal with Tamper Verification */}
+      {/* Decrypted Report Modal */}
       {activeDecryptedReport && (
         <div className="modal-overlay" onClick={() => setActiveDecryptedReport(null)}>
-          <div className="modal-content" style={{ maxWidth: "900px" }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "12px" }}>
+          <div className="modal-content" style={{ maxWidth: "850px" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "14px",
+              borderBottom: "1px solid var(--border)",
+              paddingBottom: "10px"
+            }}>
               <div>
-                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#f8fafc" }}>
+                <h3 style={{ fontSize: "17px", fontWeight: "700", color: "var(--text-main)" }}>
                   {activeDecryptedReport.report_name}
                 </h3>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "6px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "4px" }}>
                   <span className="badge-tag badge-emerald">
                     <CheckCircle2 size={12} />
-                    {activeDecryptedReport.is_tamper_free ? "CRYPTOGRAPHIC INTEGRITY: BIT-STREAM VERIFIED (TAMPER FREE)" : "TAMPER WARNING DETECTED"}
+                    {activeDecryptedReport.is_tamper_free ? "Integrity Confirmed (Tamper Free)" : "Tamper Warning"}
                   </span>
-                  <span className="mono" style={{ fontSize: "11px", color: "var(--cyan)" }}>
-                    SHA-256: {activeDecryptedReport.integrity_hash}
+                  <span className="mono" style={{ fontSize: "11px", color: "var(--primary-text)" }}>
+                    SHA-256: {activeDecryptedReport.integrity_hash ? activeDecryptedReport.integrity_hash.substring(0, 24) + "..." : ""}
                   </span>
                 </div>
               </div>
-              <button onClick={() => setActiveDecryptedReport(null)} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
-                <X size={22} />
+              <button
+                onClick={() => setActiveDecryptedReport(null)}
+                style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
+              >
+                <X size={18} />
               </button>
             </div>
 
             {/* Plaintext Content */}
-            <div style={{ maxHeight: "480px", overflowY: "auto", background: "#080c14", padding: "20px", borderRadius: "6px", border: "1px solid var(--border)", marginBottom: "16px" }}>
+            <div style={{
+              maxHeight: "440px",
+              overflowY: "auto",
+              backgroundColor: "var(--bg-code)",
+              padding: "16px",
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--border)",
+              marginBottom: "14px"
+            }}>
               <pre style={{
                 fontFamily: "var(--font-mono)",
                 fontSize: "12px",
-                color: "#e2e8f0",
-                lineHeight: "1.6",
+                color: "var(--text-main)",
+                lineHeight: "1.55",
                 whiteSpace: "pre-wrap"
               }}>
                 {activeDecryptedReport.plaintext_content}
               </pre>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                Verified at: {new Date(activeDecryptedReport.verified_at).toUTCString()}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+              <span style={{ fontSize: "11.5px", color: "var(--text-muted)" }}>
+                Verified: {activeDecryptedReport.verified_at ? new Date(activeDecryptedReport.verified_at).toUTCString() : "—"}
               </span>
-              <div style={{ display: "flex", gap: "10px" }}>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleDownloadDecrypted}
+                  style={{ fontSize: "12px" }}
+                >
+                  <Download size={13} /> Download Plaintext (.txt)
+                </button>
                 <button
                   className="btn btn-primary"
                   onClick={() => window.print()}
+                  style={{ fontSize: "12px" }}
                 >
-                  <Printer size={14} /> Print Legal Copy
+                  <Printer size={13} /> Print Dossier
                 </button>
-                <button className="btn btn-secondary" onClick={() => setActiveDecryptedReport(null)}>
+                <button className="btn btn-secondary" style={{ fontSize: "12px" }} onClick={() => setActiveDecryptedReport(null)}>
                   Close
                 </button>
               </div>

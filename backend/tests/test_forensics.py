@@ -19,13 +19,21 @@ def test_root_status():
     assert len(data["modules_active"]) == 7
 
 
+def _get_seeded_case():
+    cases = client.get("/api/cases").json()
+    for c in cases:
+        if c.get("case_number") == "FS-2026-001":
+            return c
+    return cases[0]
+
+
 def test_operation_blackout_seeded():
     """Verify Module 1: Case and Evidence Management with preloaded demo case."""
     response = client.get("/api/cases")
     assert response.status_code == 200
     cases = response.json()
     assert len(cases) >= 1
-    case = cases[0]
+    case = _get_seeded_case()
     assert case["case_number"] == "FS-2026-001"
     assert "Operation Blackout" in case["case_name"]
     assert case["evidence_count"] == 4
@@ -34,8 +42,8 @@ def test_operation_blackout_seeded():
 
 def test_evidence_integrity_verification():
     """Verify Module 1 & 2: SHA-256 evidence integrity validation."""
-    cases = client.get("/api/cases").json()
-    case_id = cases[0]["case_id"]
+    case = _get_seeded_case()
+    case_id = case["case_id"]
 
     evidence_res = client.get(f"/api/cases/{case_id}/evidence")
     assert evidence_res.status_code == 200
@@ -53,8 +61,8 @@ def test_evidence_integrity_verification():
 
 def test_chronological_timeline():
     """Verify Module 3: Chronological timeline and Common Event Model."""
-    cases = client.get("/api/cases").json()
-    case_id = cases[0]["case_id"]
+    case = _get_seeded_case()
+    case_id = case["case_id"]
 
     res = client.get(f"/api/cases/{case_id}/timeline")
     assert res.status_code == 200
@@ -74,8 +82,8 @@ def test_chronological_timeline():
 
 def test_ai_investigation_assistant():
     """Verify Module 4: Evidence-grounded conversational RAG assistant with strict citations."""
-    cases = client.get("/api/cases").json()
-    case_id = cases[0]["case_id"]
+    case = _get_seeded_case()
+    case_id = case["case_id"]
 
     # Query 1: Incident summary
     summary_res = client.get(f"/api/ai/cases/{case_id}/summary")
@@ -101,8 +109,8 @@ def test_ai_investigation_assistant():
 
 def test_examiner_validation_gate():
     """Verify Module 5: Human-in-the-loop validation gate."""
-    cases = client.get("/api/cases").json()
-    case_id = cases[0]["case_id"]
+    case = _get_seeded_case()
+    case_id = case["case_id"]
 
     findings = client.get(f"/api/cases/{case_id}/findings").json()
     assert len(findings) >= 6
@@ -121,8 +129,8 @@ def test_examiner_validation_gate():
 
 def test_attack_path_reconstruction():
     """Verify Module 5: Attack-path kill chain mapping to MITRE ATT&CK."""
-    cases = client.get("/api/cases").json()
-    case_id = cases[0]["case_id"]
+    case = _get_seeded_case()
+    case_id = case["case_id"]
 
     res = client.get(f"/api/cases/{case_id}/attack-path")
     assert res.status_code == 200
@@ -137,8 +145,8 @@ def test_attack_path_reconstruction():
 
 def test_two_key_cryptography_and_report_generation():
     """Verify Module 6 & 7: Report generation, Two-Key AES-256-GCM encryption, and tamper verification."""
-    cases = client.get("/api/cases").json()
-    case_id = cases[0]["case_id"]
+    case = _get_seeded_case()
+    case_id = case["case_id"]
 
     gen_res = client.post(f"/api/cases/{case_id}/reports/generate", json={
         "case_id": case_id,

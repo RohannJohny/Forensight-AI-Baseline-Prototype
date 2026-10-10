@@ -47,7 +47,7 @@ class Case(Base):
 class Evidence(Base):
     __tablename__ = "evidence"
 
-    evidence_id = Column(String(36), primary_key=True, default=generate_uuid)
+    evidence_id = Column(String(100), primary_key=True, default=generate_uuid)
     case_id = Column(String(36), ForeignKey("cases.case_id"), nullable=False, index=True)
     source_name = Column(String(255), nullable=False)
     evidence_type = Column(String(50), nullable=False)  # "DISK_IMAGE", "MEMORY_DUMP", "EVTX", "REGISTRY", "PCAP"
@@ -56,6 +56,8 @@ class Evidence(Base):
     hash_sha1 = Column(String(40), nullable=True)
     hash_md5 = Column(String(32), nullable=True)
     byte_size = Column(String(50), nullable=True)
+    processing_status = Column(String(50), default="PENDING")  # "PENDING", "EXTRACTING", "NORMALIZING", "INGESTING", "ANALYZING", "COMPLETED", "FAILED"
+    processing_error = Column(Text, nullable=True)
     ingested_at = Column(DateTime, default=datetime.utcnow)
 
     case = relationship("Case", back_populates="evidence_items")
@@ -65,8 +67,8 @@ class Evidence(Base):
 class Artifact(Base):
     __tablename__ = "artifacts"
 
-    artifact_id = Column(String(36), primary_key=True, default=generate_uuid)
-    evidence_id = Column(String(36), ForeignKey("evidence.evidence_id"), nullable=False, index=True)
+    artifact_id = Column(String(100), primary_key=True, default=generate_uuid)
+    evidence_id = Column(String(100), ForeignKey("evidence.evidence_id"), nullable=False, index=True)
     artifact_type = Column(String(50), nullable=False)  # "LOG", "REGISTRY", "PROCESS", "NETWORK", "FILESYSTEM"
     parser_used = Column(String(100), nullable=False)
     raw_data = Column(JSON, nullable=True)
@@ -79,9 +81,10 @@ class Artifact(Base):
 class Event(Base):
     __tablename__ = "events"
 
-    event_id = Column(String(36), primary_key=True, default=generate_uuid)
-    artifact_id = Column(String(36), ForeignKey("artifacts.artifact_id"), nullable=False, index=True)
-    timestamp = Column(DateTime, nullable=False, index=True)  # Normalized to UTC
+    event_id = Column(String(100), primary_key=True, default=generate_uuid)
+    source_event_id = Column(String(100), nullable=True, index=True)
+    artifact_id = Column(String(100), ForeignKey("artifacts.artifact_id"), nullable=False, index=True)
+    timestamp = Column(DateTime, nullable=True, index=True)  # Normalized to UTC, nullable for forensic integrity
     event_type = Column(String(100), nullable=False, index=True)
     source_entity = Column(String(150), nullable=False)
     user_account = Column(String(100), nullable=True)
@@ -99,7 +102,7 @@ class Finding(Base):
 
     finding_id = Column(String(36), primary_key=True, default=generate_uuid)
     case_id = Column(String(36), ForeignKey("cases.case_id"), nullable=False, index=True)
-    event_id = Column(String(36), ForeignKey("events.event_id"), nullable=True, index=True)
+    event_id = Column(String(100), ForeignKey("events.event_id"), nullable=True, index=True)
     finding_title = Column(String(255), nullable=False)
     finding_type = Column(String(100), nullable=False)
     description = Column(Text, nullable=False)

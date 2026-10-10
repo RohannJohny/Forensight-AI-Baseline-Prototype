@@ -18,6 +18,25 @@ def get_reconstructed_attack_path(case_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Case not found")
 
     nodes = db.query(AttackNode).filter(AttackNode.case_id == case_id).order_by(AttackNode.stage_order.asc()).all()
+    if not nodes:
+        from app.ai.mitre_mapper import MitreAttackMapper
+        findings = db.query(Finding).filter(Finding.case_id == case_id).all()
+        for f in findings:
+            stage_name, stage_order, mitre_technique = MitreAttackMapper.map_finding_to_stage(
+                f.finding_title, f.description, f.finding_type
+            )
+            node = AttackNode(
+                case_id=case_id,
+                finding_id=f.finding_id,
+                mitre_technique=mitre_technique,
+                stage_name=stage_name,
+                stage_order=stage_order,
+                description=f.finding_title
+            )
+            db.add(node)
+        if findings:
+            db.commit()
+            nodes = db.query(AttackNode).filter(AttackNode.case_id == case_id).order_by(AttackNode.stage_order.asc()).all()
 
     stages = []
     graph_nodes = []
@@ -43,7 +62,7 @@ def get_reconstructed_attack_path(case_id: str, db: Session = Depends(get_db)):
                 ev = f.event
                 event_data = {
                     "event_id": ev.event_id,
-                    "timestamp": ev.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    "timestamp": ev.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") if ev.timestamp else "N/A",
                     "source": ev.source_entity,
                     "type": ev.event_type,
                     "user": ev.user_account,
